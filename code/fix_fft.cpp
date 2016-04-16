@@ -266,3 +266,4 @@ int fix_fftr(char f[], int m, int inverse)
        scale = fix_fft(fi, fr, m-1, inverse);
    return scale;
 }
+
