@@ -3,11 +3,11 @@
 
 #define BLOCKS_NUM 4
 #define COLS_IN_BLOCK_NUM 8
-#define COLS_NUMS BLOCKS_NUM * COLS_IN_BLOCK_NUM
+#define COLS_NUM BLOCKS_NUM * COLS_IN_BLOCK_NUM
 #define ROWS_NUM 8
-#define COL_REFRESH_PERIOD 16666 / COLS_NUMS
+#define COL_REFRESH_PERIOD 16666 / COLS_NUM
 
-const int audioIn = A3;
+const int audioIn = A2;
 
 const int N = 128;
 const int LOG_2_N = 7;
@@ -25,7 +25,7 @@ const unsigned char patterns[ROWS_NUM + 1] = {
 };
 
 char im[N], re[N];
-char renderBuffer[COLS_NUMS] = {
+char renderBuffer[COLS_NUM] = {
   1,2,3,4,5,6,7,8,
   1,2,3,4,5,6,7,8,
   1,2,3,4,5,6,7,8,
@@ -33,9 +33,9 @@ char renderBuffer[COLS_NUMS] = {
 };
 
 inline void setCol(unsigned int col) {
-  digitalWrite(8, col &   B00000001);
-  digitalWrite(9, col &   B00000010);
-  digitalWrite(10, col &  B00000100);
+  digitalWrite(8,   col & B00000001);
+  digitalWrite(9,   col & B00000010);
+  digitalWrite(10,  col & B00000100);
 }
 
 inline void setBlock(unsigned int block) {
@@ -56,7 +56,7 @@ void checkDisplay() {
       for(unsigned char col = 0; col < COLS_IN_BLOCK_NUM; col++) {
           setCol(col);
           setColData(1 << row);
-          delay(5);
+          delay(10);
       }
     }
   }
@@ -69,17 +69,15 @@ void setup() {
   pinMode(10, OUTPUT);
   pinMode(A0, OUTPUT);
   pinMode(A1, OUTPUT);
-  pinMode(audioIn, INPUT);
   pinMode(14, OUTPUT);
   pinMode(16, OUTPUT);
-  //DDRC = B00000011; //Block select WHY NO?!?!???!?
 
   checkDisplay();
 
   Timer1.initialize(COL_REFRESH_PERIOD);
   Timer1.attachInterrupt(renderCol);
   
-  delay(5000);  //initial value will be shown as a sample
+  delay(8000);  //initial value will be shown as a sample
 }
 
 void loop() {
@@ -93,14 +91,16 @@ void loop() {
 
   //we interested only in absolute values
   for(int i = 0; i < 64; i++) {
-    re[i] =  sqrt(re[i] * re[i] + im[i] * im[i]);
+    re[i] = sqrt(re[i] * re[i] + im[i] * im[i]);
   }
 
   //collapsing to 32 columns of our display, so displayed bandwidth is from 0 to 16kHz
-  for(int i = 0; i < 64; i+= 2) {
+  for(int i = 0; i < COLS_NUM; i++) {
     //TODO: investigate why output range after fft has maximum value 30
-    renderBuffer[i] = map(re[i] + re[i+1], 0, 32, 0, ROWS_NUM); //calc avarage and remap value to 0 to 8 range.
+    renderBuffer[i] = map(re[i*2] + re[i*2+1], 0, 9, 0, ROWS_NUM); //calc avarage and remap value to 0 to 8 range.
   }
+
+  delay(40); //timeout between reads.
 }
 
 unsigned char activeBlock = 0;
@@ -118,7 +118,7 @@ void renderCol() {
     activeBlock++;
   }
   setCol(activeCol);
-  setColData(patterns[renderBuffer[activeBlock + activeCol]]);
+  setColData(patterns[renderBuffer[activeBlock + activeCol - activeBlock]]); //WTF?!?!?!??!?!
   activeCol++;
 }
 
