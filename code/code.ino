@@ -23,28 +23,15 @@ char renderBuffer[COLS_NUMS] = {
 void checkDisplay() {
   for(unsigned char row = 0; row < ROWS_NUM; row++) {
     for(unsigned char activeBlock = 0; activeBlock < BLOCKS_NUM; activeBlock++) {
-      switch(activeBlock) {
-        case 0:
-          digitalWrite(A0, LOW);
-          digitalWrite(A1, LOW);
-          break;
-        case 1:
-          digitalWrite(A0, HIGH);
-          digitalWrite(A1, LOW);
-          break;
-        case 2:
-          digitalWrite(A0, LOW);
-          digitalWrite(A1, HIGH);
-          break;
-        case 3:
-          digitalWrite(A0, HIGH);
-          digitalWrite(A1, HIGH);
-          break;
-      }
+          digitalWrite(A0, activeBlock & B00000001);
+          digitalWrite(A1, activeBlock & B00000010);
       for(unsigned char col = 0; col < COLS_IN_BLOCK_NUM*2; col++) { // WTF?????
           PORTB = col << 3;  //WTF???????
-          PORTD = 1 << row;
-          delay(25);
+          unsigned char out = 1 << row;
+          PORTD = out;
+          digitalWrite(16, out & B00100000);
+          digitalWrite(14, out & B01000000);
+          delay(20);
       }
     }
   }
@@ -57,6 +44,8 @@ void setup() {
   pinMode(10, OUTPUT);
   pinMode(A0, OUTPUT);
   pinMode(A1, OUTPUT);
+  pinMode(14, OUTPUT);
+  pinMode(16, OUTPUT);
   //DDRC = B00000011; //Block select WHY NO?!?!???!?
 
   Timer1.initialize(COL_REFRESH_PERIOD);
